@@ -1,107 +1,366 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="ko">
 <head>
     <meta charset="UTF-8">
-    <meta http-equiv="X-UA-Compatible" content="IE=edge">
-    <link rel="stylesheet" type="text/css" href="style.css">
-    <audio controls autoplay id="myAudio">
-        <source src="assets/The Dreamyard.mp3" type="audio/mpeg">
-    </audio>
-    
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="style.css">
+
     <meta property="og:title" content="화살 피하기 게임">
     <meta property="og:type" content="website">
     <meta property="og:image" content="img/썸네일.png">
     <meta property="og:description" content="화살을 피해 높은 점수를 획득하세요!">
     <title>화살 피하기 게임</title>
+
+    <!-- 토스트 컨테이너 -->
+    <div id="toast-container"></div>
+
+    <audio id="myAudio" loop>
+        <source src="assets/The Dreamyard.mp3" type="audio/mpeg">
+    </audio>
 </head>
 <body>
+
+    <!-- 게임오버 보드 -->
     <div id="score_board">
-        <div id="_nickname" style="display: none;"></div>
+        <div id="_nickname" style="display:none;"></div>
         <div class="ranking">
             <div class="ranking_title">랭킹</div>
             <div class="ranking_row">
-                <div id="ranking1">데이터가 없습니다.</div> 
+                <div id="ranking1">데이터가 없습니다.</div>
                 <div id="ranking1_score"></div>
             </div>
             <div class="ranking_row">
-                <div id="ranking2">데이터가 없습니다.</div> 
+                <div id="ranking2">데이터가 없습니다.</div>
                 <div id="ranking2_score"></div>
             </div>
             <div class="ranking_row">
-                <div id="ranking3">데이터가 없습니다.</div> 
+                <div id="ranking3">데이터가 없습니다.</div>
                 <div id="ranking3_score"></div>
             </div>
             <div class="ranking_row">
-                <div id="ranking4">데이터가 없습니다.</div> 
+                <div id="ranking4">데이터가 없습니다.</div>
                 <div id="ranking4_score"></div>
             </div>
             <div class="ranking_row">
-                <div id="ranking5">데이터가 없습니다.</div> 
+                <div id="ranking5">데이터가 없습니다.</div>
                 <div id="ranking5_score"></div>
             </div>
         </div>
         <div class="score_container">
             <div>
-                <p>앗..!🥹 아쉬워요..</p>
-                <div>현재 점수는 <b id="score">50</b>점 입니다 🌟</div>
+                <p>아쉬워요!</p>
+                <div>현재 점수</div>
+                <b id="score">0</b>
+                <div id="earned-points" class="earned-points"></div>
             </div>
             <div onclick="restart()">다시하기</div>
-            <div class="share_container"  onclick="share()">
+            <div class="share_container" onclick="share()">
                 <div class="share_image">
-                    <img src="./img/share.png"/>
+                    <img src="./img/share.png" alt="공유">
                 </div>
                 <div class="share_title">공유하기</div>
             </div>
         </div>
     </div>
+
+    <!-- 닉네임 입력 -->
     <div id="nickname-container">
+        <canvas id="lobby-bg"></canvas>
         <div class="nickname-modal">
-            <div class="nickname_title">닉네임 입력</div>
-            <input class="nickname" type="text" id="nickname" name="nickname" required placeholder="닉네임을 입력하세요" >
+            <div class="nickname_title">화살 피하기</div>
+            <button id="login-btn" class="google-login-btn">
+                <svg width="18" height="18" viewBox="0 0 48 48"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/><path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/></svg>
+                Google 로그인
+            </button>
+            <button id="logout-btn" class="logout-btn" style="display:none;">로그아웃</button>
+            <div id="user-info" class="user-info" style="display:none;">
+                <span>보유 포인트</span>
+                <span id="user-points" class="user-points">0P</span>
+            </div>
+            <input class="nickname" type="text" id="nickname" name="nickname" required
+                   placeholder="닉네임을 입력하세요" maxlength="10">
             <button id="start-button" onclick="startGame()">게임 시작</button>
+
+            <!-- 스킨 샵 -->
+            <div id="skin-shop" class="skin-shop" style="display:none;">
+                <div class="skin-shop-title">스킨</div>
+                <div id="skin-grid" class="skin-grid"></div>
+            </div>
         </div>
     </div>
+
+    <!-- 게임 캔버스 -->
     <canvas class="canvas" style="display:none;"></canvas>
-    <div class="tutorial_hidden">
-        <img class="show img1" src="/img/튜토리얼1.png" onclick="imageClick(1)"/>
-        <img class="show img2" src="/img/튜토리얼2.png" onclick="imageClick(2)"/>
-        <img class="show img3" src="/img/튜토리얼3.png" onclick="imageClick(3)"/>
-        <img class="show img4" src="/img/튜토리얼4.png" onclick="imageClick(4)"/>
-        <img class="show img5" src="/img/튜토리얼5.png" onclick="imageClick(5)"/>
-        <img class="show img6" src="/img/튜토리얼6.png" onclick="imageClick(6)"/>
-        <img class="show img7" src="/img/튜토리얼7.png" onclick="imageClick(7)"/>
+
+    <!-- 튜토리얼 (HTML 기반) -->
+    <div class="tutorial_hidden" id="tutorial">
+        <div class="tutorial-overlay">
+            <div class="tutorial-card">
+                <!-- 슬라이드 1 -->
+                <div class="tutorial-slide active" data-step="1">
+                    <div class="tutorial-icon">
+                        <img src="img/char.png" alt="캐릭터" width="64" height="64">
+                    </div>
+                    <h2>화살 피하기 게임</h2>
+                    <p>마우스 또는 터치로 캐릭터를 움직여<br>날아오는 화살을 피하세요!</p>
+                    <div class="tutorial-step-indicator">
+                        <span class="dot active"></span>
+                        <span class="dot"></span>
+                        <span class="dot"></span>
+                        <span class="dot"></span>
+                        <span class="dot"></span>
+                    </div>
+                    <button class="tutorial-next" onclick="nextTutorial(1)">다음</button>
+                </div>
+
+                <!-- 슬라이드 2 -->
+                <div class="tutorial-slide" data-step="2">
+                    <div class="tutorial-icon-row">
+                        <div class="tutorial-item">
+                            <img src="img/heart.png" alt="하트" width="40" height="40">
+                            <span>체력 +2</span>
+                        </div>
+                        <div class="tutorial-item">
+                            <div class="tutorial-icon-circle" style="background:#f0a500;">
+                                <span style="color:#fff;font-weight:800;font-size:18px;">$</span>
+                            </div>
+                            <span>코인 +10</span>
+                        </div>
+                    </div>
+                    <h2>아이템을 모으세요</h2>
+                    <p>하트는 체력을 회복하고<br>코인은 보너스 점수를 줍니다.</p>
+                    <div class="tutorial-step-indicator">
+                        <span class="dot"></span>
+                        <span class="dot active"></span>
+                        <span class="dot"></span>
+                        <span class="dot"></span>
+                        <span class="dot"></span>
+                    </div>
+                    <button class="tutorial-next" onclick="nextTutorial(2)">다음</button>
+                </div>
+
+                <!-- 슬라이드 3: 방어 아이템 -->
+                <div class="tutorial-slide" data-step="3">
+                    <div class="tutorial-icon-row">
+                        <div class="tutorial-item">
+                            <img src="img/shield.png" alt="쉴드" width="40" height="40">
+                            <span>쉴드 7초</span>
+                        </div>
+                        <div class="tutorial-item">
+                            <img src="img/slow.png" alt="슬로우" width="40" height="40">
+                            <span>슬로우 10초</span>
+                        </div>
+                    </div>
+                    <h2>방어 아이템</h2>
+                    <p>쉴드는 화살을 막아주고<br>슬로우는 화살 속도를 늦춰줍니다.</p>
+                    <div class="tutorial-step-indicator">
+                        <span class="dot"></span>
+                        <span class="dot"></span>
+                        <span class="dot active"></span>
+                        <span class="dot"></span>
+                        <span class="dot"></span>
+                    </div>
+                    <button class="tutorial-next" onclick="nextTutorial(3)">다음</button>
+                </div>
+
+                <!-- 슬라이드 4: 특수 아이템 -->
+                <div class="tutorial-slide" data-step="4">
+                    <div class="tutorial-icon-row">
+                        <div class="tutorial-item">
+                            <div class="tutorial-icon-circle" style="background:#ff4b5c;">
+                                <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><circle cx="10" cy="11" r="5" fill="#fff"/><line x1="12" y1="7" x2="15" y2="3" stroke="#fff" stroke-width="2" stroke-linecap="round"/><circle cx="15" cy="3" r="2" fill="#ffd700"/></svg>
+                            </div>
+                            <span>폭탄</span>
+                        </div>
+                        <div class="tutorial-item">
+                            <div class="tutorial-icon-circle" style="background:#a855f7;">
+                                <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><line x1="14" y1="10" x2="8" y2="10" stroke="#fff" stroke-width="2" stroke-linecap="round"/><line x1="10" y1="14" x2="10" y2="8" stroke="#fff" stroke-width="2" stroke-linecap="round"/></svg>
+                            </div>
+                            <span>축소</span>
+                        </div>
+                        <div class="tutorial-item">
+                            <div class="tutorial-icon-circle" style="background:#3b82f6;">
+                                <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M6 8v-2M14 8v-2" stroke="#fff" stroke-width="2" stroke-linecap="round"/><path d="M6 8a4 4 0 008 0" stroke="#fff" stroke-width="2" fill="none"/></svg>
+                            </div>
+                            <span>자석</span>
+                        </div>
+                    </div>
+                    <h2>특수 아이템</h2>
+                    <p>폭탄은 모든 화살을 제거하고<br>축소는 히트박스를 줄여주며<br>자석은 아이템을 끌어당깁니다.</p>
+                    <div class="tutorial-step-indicator">
+                        <span class="dot"></span>
+                        <span class="dot"></span>
+                        <span class="dot"></span>
+                        <span class="dot active"></span>
+                        <span class="dot"></span>
+                    </div>
+                    <button class="tutorial-next" onclick="nextTutorial(4)">다음</button>
+                </div>
+
+                <!-- 슬라이드 5: 난이도 -->
+                <div class="tutorial-slide" data-step="5">
+                    <div class="tutorial-icon">
+                        <svg width="64" height="64" viewBox="0 0 64 64" fill="none">
+                            <circle cx="32" cy="32" r="28" stroke="#3182f6" stroke-width="3" fill="none"/>
+                            <path d="M32 18v18l12 7" stroke="#3182f6" stroke-width="3" stroke-linecap="round"/>
+                        </svg>
+                    </div>
+                    <h2>시간이 갈수록 어려워져요</h2>
+                    <p>점점 빨라지는 화살과 늘어나는 난이도!<br>50점부터는 유도 화살도 등장합니다.<br>최고 점수에 도전해보세요.</p>
+                    <div class="tutorial-step-indicator">
+                        <span class="dot"></span>
+                        <span class="dot"></span>
+                        <span class="dot"></span>
+                        <span class="dot"></span>
+                        <span class="dot active"></span>
+                    </div>
+                    <button class="tutorial-next" onclick="nextTutorial(5)">시작하기</button>
+                </div>
+            </div>
+        </div>
     </div>
 
     <script>
-        function share() {
-            alert("URL이 복사되었습니다.")
+        // 토스트 함수
+        window.showToast = function(message, type) {
+            type = type || 'info';
+            var container = document.getElementById('toast-container');
+            var toast = document.createElement('div');
+            toast.className = 'toast toast-' + type;
+            toast.textContent = message;
+            container.appendChild(toast);
 
+            // 등장 애니메이션
+            requestAnimationFrame(function() {
+                toast.classList.add('show');
+            });
+
+            // 3초 후 제거
+            setTimeout(function() {
+                toast.classList.remove('show');
+                toast.classList.add('hide');
+                setTimeout(function() {
+                    if (toast.parentNode) toast.parentNode.removeChild(toast);
+                }, 300);
+            }, 2500);
+        };
+
+        // 로비 배경 화살 애니메이션
+        (function() {
+            var canvas = document.getElementById('lobby-bg');
+            if (!canvas) return;
+            var ctx = canvas.getContext('2d');
+            var arrows = [];
+            var arrowImg1 = new Image();
+            var arrowImg2 = new Image();
+            arrowImg1.src = 'img/arrow.png';
+            arrowImg2.src = 'img/arrow2.png';
+
+            function resize() {
+                canvas.width = window.innerWidth;
+                canvas.height = window.innerHeight;
+            }
+            resize();
+            window.addEventListener('resize', resize);
+
+            function spawnArrow() {
+                var img = Math.random() < 0.5 ? arrowImg1 : arrowImg2;
+                var side = Math.floor(Math.random() * 4);
+                var x, y, angle;
+                if (side === 0) { x = -50; y = Math.random() * canvas.height; angle = Math.random() * 0.8 - 0.4; }
+                else if (side === 1) { x = canvas.width + 50; y = Math.random() * canvas.height; angle = Math.PI + Math.random() * 0.8 - 0.4; }
+                else if (side === 2) { x = Math.random() * canvas.width; y = -50; angle = Math.PI/2 + Math.random() * 0.8 - 0.4; }
+                else { x = Math.random() * canvas.width; y = canvas.height + 50; angle = -Math.PI/2 + Math.random() * 0.8 - 0.4; }
+
+                arrows.push({
+                    x: x, y: y,
+                    angle: angle,
+                    speed: 1 + Math.random() * 2,
+                    opacity: 0.08 + Math.random() * 0.12,
+                    scale: 0.6 + Math.random() * 0.8,
+                    img: img
+                });
+            }
+
+            function animate() {
+                requestAnimationFrame(animate);
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+                if (Math.random() < 0.03 && arrows.length < 15) spawnArrow();
+
+                for (var i = arrows.length - 1; i >= 0; i--) {
+                    var a = arrows[i];
+                    a.x += Math.cos(a.angle) * a.speed;
+                    a.y += Math.sin(a.angle) * a.speed;
+
+                    ctx.save();
+                    ctx.globalAlpha = a.opacity;
+                    ctx.translate(a.x, a.y);
+                    ctx.rotate(a.angle + Math.PI);
+                    ctx.scale(a.scale, a.scale);
+                    ctx.drawImage(a.img, 0, 0, 512, 154, -35, -10, 71, 21);
+                    ctx.restore();
+
+                    if (a.x < -100 || a.x > canvas.width + 100 || a.y < -100 || a.y > canvas.height + 100) {
+                        arrows.splice(i, 1);
+                    }
+                }
+            }
+            animate();
+        })();
+
+        function share() {
+            if (navigator.clipboard) {
+                navigator.clipboard.writeText(location.href);
+            }
+            showToast("URL이 복사되었습니다.", "success");
         }
-         document.addEventListener('click', function() {
-            var audioElement = document.getElementById('myAudio');
-            audioElement.volume = 0.1; // Volume set to 50%
-            audioElement.play()
-        });
+
+        document.addEventListener('click', function () {
+            var audio = document.getElementById('myAudio');
+            audio.volume = 0.1;
+            audio.play();
+        }, { once: true });
+
+        // 튜토리얼 네비게이션
+        function nextTutorial(current) {
+            var slides = document.querySelectorAll('.tutorial-slide');
+            slides[current - 1].classList.remove('active');
+
+            if (current >= slides.length) {
+                // 마지막 슬라이드 — 게임 시작
+                document.getElementById('tutorial').className = 'tutorial_hidden';
+                window.finishTutorial();
+            } else {
+                slides[current].classList.add('active');
+            }
+        }
     </script>
+
     <script type="module">
         import * as arrow from "./js/App.js";
 
-        window.imageClick  = function(id) {
-            const nickname = document.getElementById('nickname').value;
-            document.querySelector(".img" + id).className = 'hidden';
-            if(id === 7) {
-                arrow.gameStart(nickname);
-                setCookie("tutorial", true, 7); // 7일 동안 유효한 쿠키 설정
-            }
-            console.log("클릭");
-        }
+        // 로그인/스킨 연결
+        document.getElementById('login-btn').addEventListener('click', async () => {
+            await arrow.googleLogin();
+        });
+        document.getElementById('logout-btn').addEventListener('click', async () => {
+            await arrow.googleLogout();
+        });
+        window.buySkinAction = function(skinId) {
+            let result = arrow.buySkin(skinId);
+            if (!result.success) showToast(result.reason, "error");
+        };
+        window.selectSkinAction = function(skinId) {
+            arrow.selectSkin(skinId);
+        };
 
         function getCookie(name) {
-            let cookieArr = document.cookie.split(";");
-            for(let i = 0; i < cookieArr.length; i++) {
-                let cookiePair = cookieArr[i].split("=");
-                if(name == cookiePair[0].trim()) {
-                    return decodeURIComponent(cookiePair[1]);
+            let cookies = document.cookie.split(";");
+            for (let i = 0; i < cookies.length; i++) {
+                let pair = cookies[i].split("=");
+                if (name === pair[0].trim()) {
+                    return decodeURIComponent(pair[1]);
                 }
             }
             return null;
@@ -111,38 +370,43 @@
             let expires = "";
             if (days) {
                 let date = new Date();
-                date.setTime(date.getTime() + (days * 24 * 60 * 60 * 1000));
+                date.setTime(date.getTime() + days * 86400000);
                 expires = "; expires=" + date.toUTCString();
             }
-            document.cookie = name + "=" + (value || "")  + expires + "; path=/";
+            document.cookie = name + "=" + (value || "") + expires + "; path=/";
         }
 
-        window.startGame = function() {
-            // App.js의 게임 초기화 함수 호출 (닉네임을 인자로 전달)
+        window.finishTutorial = function () {
             const nickname = document.getElementById('nickname').value;
-            if (nickname.trim() !== '') {
-                document.getElementById('nickname-container').style.display = 'none';
-                document.querySelector('.canvas').style.display = 'block';
-                document.querySelector("#_nickname").textContent = nickname;
+            arrow.gameStart(nickname);
+            setCookie("tutorial", true, 7);
+        };
 
-                if(getCookie("tutorial")) {
-                    arrow.gameStart(nickname);
-                } else {
-                    arrow.tutorial();
-
-                }
-                //arrow.gameStart(nickname);  // 닉네임을 인자로 전달하여 게임 시작
-            } else {
-                alert('닉네임을 입력하세요.');
+        window.startGame = function () {
+            const nickname = document.getElementById('nickname').value;
+            if (nickname.trim() === '') {
+                showToast('닉네임을 입력하세요.', 'error');
+                return;
             }
-        }
 
-        window.restart = function() {
-            // App.js의 게임 초기화 함수 호출 (닉네임을 인자로 전달)
+            document.getElementById('nickname-container').style.display = 'none';
+            document.querySelector('.canvas').style.display = 'block';
+            document.querySelector("#_nickname").textContent = nickname;
+
+            if (getCookie("tutorial")) {
+                arrow.gameStart(nickname);
+            } else {
+                arrow.tutorial();
+            }
+        };
+
+        document.getElementById('nickname').addEventListener('keydown', function (e) {
+            if (e.key === 'Enter') startGame();
+        });
+
+        window.restart = function () {
             arrow.restart();
-            // 여기에 arrow의 재시작 함수 호출 추가
-        }
-
+        };
     </script>
 </body>
 </html>

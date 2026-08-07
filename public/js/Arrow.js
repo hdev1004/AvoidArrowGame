@@ -5,13 +5,13 @@ export class Arrow {
         this.DecreaseOpacity = 0.005;
         this.arrowIndex = arrowIndex;
 
-        this.isHitAnimation = false
+        this.isHitAnimation = false;
         this.isEnd = false;
         this.isHit = false;
         this.x = x;
         this.y = y;
-        this.imgWidth = 71; //71
-        this.imgHeight = 21; //21
+        this.imgWidth = 71;
+        this.imgHeight = 21;
 
         this.nowTime = 0;
         this.focusTime = 3;
@@ -27,40 +27,32 @@ export class Arrow {
         this.speed = speed;
         this.degree = 0;
         this.go = 0;
-        
+
         this.imgGapX;
         this.imgGapY;
-        this.hitbox = {
-            x: 0,
-            y: 0,
-            w: 0,
-            h: 0,
-            r: 0,
-            s: 0
-        };
+        this.hitbox = { x: 0, y: 0, w: 0, h: 0, r: 0, s: 0 };
 
-        //회전, 시간 관련
+        // 회전
         this.rotateSpeed = rotateSpeed;
-        this.splitScale = this.size / this.rotateSpeed; //this.size
+        this.splitScale = this.size / this.rotateSpeed;
         this.nowScale = 0;
         this.index = 0;
 
-        //발사 관련
+        // 발사
         this.shot = -30.5;
         this.shotSpeed = 10;
 
-        //모션이 완료 됐는지 확인
+        // 모션 플래그
         this.createMotionFlag = false;
         this.shotMotionFlag = false;
         this.lastPosBackup = null;
 
+        // delta time (60fps 기준 정규화)
+        this.lastTime = 0;
+        this.delta = 1;
 
         this.img = new Image();
-        let arrowRandom = this.getRandomInt(0, 2);
-        if(arrowRandom == 0)
-            this.img.src = "img/arrow.png";
-        else if(arrowRandom == 1)
-            this.img.src = "img/arrow2.png";
+        this.img.src = Math.random() < 0.5 ? "img/arrow.png" : "img/arrow2.png";
 
         this.canvas = document.querySelector(".canvas");
         this.ctx = this.canvas.getContext("2d");
@@ -71,40 +63,28 @@ export class Arrow {
     getRandomInt(min, max) {
         min = Math.ceil(min);
         max = Math.floor(max);
-        return Math.floor(Math.random() * (max - min)) + min; //최댓값은 제외, 최솟값은 포함
+        return Math.floor(Math.random() * (max - min)) + min;
     }
+
     getPos(speed) {
         let targetRadian = -Math.atan2(this.mouseX - this.x, this.mouseY - this.y);
         let targetDegree = this.radianToDegree(targetRadian);
-        if(targetDegree < 0) {
+        if (targetDegree < 0) targetDegree += 360;
+
+        if (Math.abs(targetDegree - this.degree) > Math.floor(targetDegree) + 360 - Math.floor(this.degree)) {
             targetDegree += 360;
-        }
-        //      180
-        // 270          90
-        //      360(0)
-        if(Math.abs(targetDegree - this.degree) > Math.floor(targetDegree) + 360 - Math.floor(this.degree)) {
-            //왼쪽에서 오른쪽으로
-            targetDegree += 360;
-        } else if(Math.abs(targetDegree - this.degree) >  Math.floor(this.degree) + 360 - Math.floor(targetDegree)) {
-            //오른쪽에서 왼쪽으로
+        } else if (Math.abs(targetDegree - this.degree) > Math.floor(this.degree) + 360 - Math.floor(targetDegree)) {
             this.degree += 360;
-        } 
-        if(targetDegree - speed > this.degree) {
+        }
+
+        if (targetDegree - speed > this.degree) {
             this.degree += speed;
-        }
-        else if(targetDegree + speed < this.degree) {
-            this.degree -=speed;
+        } else if (targetDegree + speed < this.degree) {
+            this.degree -= speed;
         }
 
-        //console.log(targetDegree);
         let radian = this.degreeToRadian(this.degree);
-
-        return {
-            x: this.x,
-            y: this.y,
-            r: radian,
-            d: this.degree
-        };
+        return { x: this.x, y: this.y, r: radian, d: this.degree };
     }
 
     radianToDegree(radian) {
@@ -112,7 +92,7 @@ export class Arrow {
     }
 
     degreeToRadian(degree) {
-        return (degree/180) * Math.PI * -1;
+        return (degree / 180) * Math.PI * -1;
     }
 
     MediateDegree(degree) {
@@ -123,6 +103,7 @@ export class Arrow {
         this.mouseX = e.clientX;
         this.mouseY = e.clientY;
     }
+
     touchMove(e) {
         let touches = e.changedTouches;
         this.mouseX = touches[0].clientX;
@@ -132,129 +113,122 @@ export class Arrow {
     createMotion() {
         let pos;
         let trigger = false;
-        if(this.rotateSpeed > 0) {
-            this.degree += this.rotateSpeed;
-            this.rotateSpeed -= 1;
-            this.nowScale += this.splitScale;
-        } else { // 다 돌았을 때
+
+        if (this.rotateSpeed > 0) {
+            this.degree += this.rotateSpeed * this.delta;
+            this.rotateSpeed -= 1 * this.delta;
+            this.nowScale += this.splitScale * this.delta;
+        } else {
             trigger = true;
             this.degree %= 360;
             pos = this.getPos(4);
         }
+
         this.ctx.save();
         this.ctx.translate(this.x, this.y);
         this.ctx.scale(this.nowScale, this.nowScale);
-        this.ctx.rotate(this.degreeToRadian(90)); //90도 라디안
-        if(trigger == false)
+        this.ctx.rotate(this.degreeToRadian(90));
+
+        if (!trigger) {
             this.ctx.rotate(this.MediateDegree(this.degree));
-        else {
-            //다 돌고나서 행동할 모션
-            this.nowTime += this.splitTimer;
-            if(this.nowTime >= this.focusTime) {
-                this.createMotionFlag = true;
-            }
-            
+        } else {
+            this.nowTime += this.splitTimer * this.delta;
+            if (this.nowTime >= this.focusTime) this.createMotionFlag = true;
+
             this.ctx.rotate(pos.r);
             this.hitbox = {
-                x: this.x -this.imgWidth * this.size / 2,
-                y: this.y -this.imgHeight * this.size / 2,
+                x: this.x - this.imgWidth * this.size / 2,
+                y: this.y - this.imgHeight * this.size / 2,
                 w: this.imgWidth * this.size,
                 h: this.imgHeight * this.size,
                 r: pos.r + this.degreeToRadian(90),
                 s: this.size
-            }
+            };
         }
 
-        //this.ctx.strokeRect(-this.imgWidth / 2 + 5, -this.imgHeight / 2, this.imgWidth, this.imgHeight);
-        //this.ctx.stroke();
         this.imgGapX = -35.5;
         this.imgGapY = -10.5;
         this.ctx.drawImage(this.img, 0, 0, 512, 154, this.imgGapX, this.imgGapY, this.imgWidth, this.imgHeight);
         this.ctx.restore();
-
     }
 
     shootingMotion() {
-        if(this.lastPosBackup == null){
+        if (this.lastPosBackup == null) {
             this.lastPosBackup = this.getPos(0);
-            //console.log(this.lastPosBackup.d);
         }
-        
 
         let angle = this.degreeToRadian(this.lastPosBackup.d - 90);
-        //console.log(this.radianToDegree(angle));
-        //console.log(pos.d - 90);
         this.x = this.lastPosBackup.x + Math.cos(angle) * this.go;
         this.y = this.lastPosBackup.y + Math.sin(angle) * this.go;
-        this.go += this.speed;
+        let currentSpeed = this.main.nowSlowTime > 0 ? 5 : this.speed;
+        this.go += currentSpeed * this.delta;
 
         this.ctx.save();
         this.ctx.translate(this.x, this.y);
         this.ctx.scale(this.nowScale, this.nowScale);
-        this.ctx.rotate(this.degreeToRadian(90)); //90도 라디안
-
+        this.ctx.rotate(this.degreeToRadian(90));
         this.ctx.rotate(this.lastPosBackup.r);
-        //this.ctx.strokeRect(-this.imgWidth / 2 + 5, -this.imgHeight / 2, this.imgWidth, this.imgHeight);
         this.ctx.drawImage(this.img, 0, 0, 512, 154, this.imgGapX, this.imgGapY, this.imgWidth, this.imgHeight);
-        //this.ctx.stroke();
-
         this.ctx.restore();
+
         this.hitbox = {
-            x: this.x -this.imgWidth * this.size / 2,
-            y: this.y -this.imgHeight * this.size / 2,
+            x: this.x - this.imgWidth * this.size / 2,
+            y: this.y - this.imgHeight * this.size / 2,
             w: this.imgWidth * this.size,
             h: this.imgHeight * this.size,
             r: this.lastPosBackup.r + this.degreeToRadian(90),
             s: this.size
-        }
+        };
 
-
-        if(this.x<= -1 || this.x >= this.canvas.width) {
-            this.shotMotionFlag = true;
-        }
-
-        if(this.y <= -1 || this.y >= this.canvas.height) {
+        if (this.x <= -1 || this.x >= this.canvas.width || this.y <= -1 || this.y >= this.canvas.height) {
             this.shotMotionFlag = true;
         }
     }
 
     leftMotion() {
         this.ctx.save();
-        if(this.opacity > this.DecreaseOpacity)
-            this.opacity -= this.DecreaseOpacity;
-        else{
+        if (this.opacity > this.DecreaseOpacity) {
+            this.opacity -= this.DecreaseOpacity * this.delta;
+        } else {
             this.opacity = 0;
             this.isEnd = true;
         }
+
         this.ctx.globalAlpha = this.opacity;
         this.ctx.translate(this.x, this.y);
         this.ctx.scale(this.nowScale, this.nowScale);
-        this.ctx.rotate(this.degreeToRadian(90)); //90도 라디안
-        
+        this.ctx.rotate(this.degreeToRadian(90));
         this.ctx.rotate(this.lastPosBackup.r);
         this.ctx.drawImage(this.img, 0, 0, 512, 154, this.imgGapX, this.imgGapY, this.imgWidth, this.imgHeight);
         this.ctx.restore();
     }
 
+    animate(timestamp) {
+        if (this.isEnd) return;
 
-    animate(t) {
-        if(this.isEnd == false) {
-            requestAnimationFrame(this.animate.bind(this));
-        
-            if(this.createMotionFlag == false)
-                this.createMotion();
-            else if(this.shotMotionFlag == false)
-                this.shootingMotion();
-            else if(this.shotMotionFlag == true)
-                this.leftMotion();
-            
-    
-            this.CharCollision();
+        requestAnimationFrame(this.animate.bind(this));
+
+        // 60fps 기준 delta time 계산
+        if (this.lastTime > 0) {
+            const elapsed = timestamp - this.lastTime;
+            this.delta = elapsed / (1000 / 60); // 60fps = 16.67ms 기준
+            if (this.delta > 3) this.delta = 3; // 탭 전환 등 극단적 스파이크 방지
         }
+        this.lastTime = timestamp;
+
+        if (!this.createMotionFlag) {
+            this.createMotion();
+        } else if (!this.shotMotionFlag) {
+            this.shootingMotion();
+        } else {
+            this.leftMotion();
+        }
+
+        this.CharCollision();
     }
 
-    detectCollision(rect, circle) { //본체와 닿았을 때
-        var cx, cy
+    detectCollision(rect, circle) {
+        var cx, cy;
         var angleOfRad = -rect.r;
         var rectCenterX = rect.x + rect.w / 2;
         var rectCenterY = rect.y + rect.h / 2;
@@ -262,44 +236,24 @@ export class Arrow {
         var rotateCircleX = Math.cos(angleOfRad) * (circle.x - rectCenterX) - Math.sin(angleOfRad) * (circle.y - rectCenterY) + rectCenterX;
         var rotateCircleY = Math.sin(angleOfRad) * (circle.x - rectCenterX) + Math.cos(angleOfRad) * (circle.y - rectCenterY) + rectCenterY;
 
-        if (rotateCircleX < rect.x) {
-            cx = rect.x;
-        } else if (rotateCircleX > rect.x + rect.w) {
-            cx = rect.x + rect.w;
-        } else {
-            cx = rotateCircleX;
-        }
+        cx = Math.max(rect.x, Math.min(rotateCircleX, rect.x + rect.w));
+        cy = Math.max(rect.y, Math.min(rotateCircleY, rect.y + rect.h));
 
-        if (rotateCircleY < rect.y) {
-            cy = rect.y;
-        } else if (rotateCircleY > rect.y + rect.h) {
-            cy = rect.y + rect.h;
-        } else {
-            cy = rotateCircleY;
-        }
-        //console.log('rotateCircleX', rotateCircleX)
-        //console.log('rotateCircleY', rotateCircleY)
-        //console.log('cx', cx)
-        //console.log('cy', cy)
-        //console.log(this.distance(rotateCircleX, rotateCircleY, cx, cy))
-        if (this.distance(rotateCircleX, rotateCircleY, cx, cy) < circle.r && this.isHit == false) {
-            
-            if(this.main.life <= 0) return;
-            this.canvas.className = 'canvas hit'
-            setTimeout(() => {
-                this.canvas.classList = 'canvas'
-            }, 1000)
+        if (this.distance(rotateCircleX, rotateCircleY, cx, cy) < circle.r && !this.isHit) {
+            if (this.main.life <= 0) return false;
+
+            this.canvas.className = 'canvas hit';
+            setTimeout(() => { this.canvas.classList = 'canvas'; }, 1000);
+
             this.main.life -= 1;
             this.isHit = true;
             return true;
         }
-
         return false;
-
     }
 
-    detectShieldCollision(rect, circle) { //방패와 닿았을 때
-        var cx, cy
+    detectShieldCollision(rect, circle) {
+        var cx, cy;
         var angleOfRad = -rect.r;
         var rectCenterX = rect.x + rect.w / 2;
         var rectCenterY = rect.y + rect.h / 2;
@@ -307,35 +261,16 @@ export class Arrow {
         var rotateCircleX = Math.cos(angleOfRad) * (circle.x - rectCenterX) - Math.sin(angleOfRad) * (circle.y - rectCenterY) + rectCenterX;
         var rotateCircleY = Math.sin(angleOfRad) * (circle.x - rectCenterX) + Math.cos(angleOfRad) * (circle.y - rectCenterY) + rectCenterY;
 
-        if (rotateCircleX < rect.x) {
-            cx = rect.x;
-        } else if (rotateCircleX > rect.x + rect.w) {
-            cx = rect.x + rect.w;
-        } else {
-            cx = rotateCircleX;
-        }
+        cx = Math.max(rect.x, Math.min(rotateCircleX, rect.x + rect.w));
+        cy = Math.max(rect.y, Math.min(rotateCircleY, rect.y + rect.h));
 
-        if (rotateCircleY < rect.y) {
-            cy = rect.y;
-        } else if (rotateCircleY > rect.y + rect.h) {
-            cy = rect.y + rect.h;
-        } else {
-            cy = rotateCircleY;
-        }
-        //console.log('rotateCircleX', rotateCircleX)
-        //console.log('rotateCircleY', rotateCircleY)
-        //console.log('cx', cx)
-        //console.log('cy', cy)
-        //console.log(this.distance(rotateCircleX, rotateCircleY, cx, cy))
-        if (this.distance(rotateCircleX, rotateCircleY, cx, cy) < circle.r && this.isHit == false) {
+        if (this.distance(rotateCircleX, rotateCircleY, cx, cy) < circle.r && !this.isHit) {
             this.isEnd = true;
             this.isHit = true;
-            this.main.drawParticle(cx, cy)
+            this.main.drawParticle(cx, cy);
             return true;
         }
-
         return false;
-
     }
 
     distance(x1, y1, x2, y2) {
@@ -343,31 +278,17 @@ export class Arrow {
     }
 
     CharCollision() {
-        //this.detectCollision(this.hitbox,{x: this.mouseX, y: this.mouseY, r: 10});
-        if(this.shotMotionFlag == false) {
-            if(this.main.nowShieldTime > 0) {
-                let radius = 100
-                this.main.angles.forEach((angle, index) => {
-                    const x = this.mouseX + radius * Math.cos(angle);
-                    const y = this.mouseY + radius * Math.sin(angle);
-                    
-                    this.detectShieldCollision(this.hitbox,{x: x, y: y, r: 30});
-                });
-            }
-            this.detectCollision(this.hitbox,{x: this.mouseX, y: this.mouseY, r: 30});
+        if (this.shotMotionFlag) return;
 
+        if (this.main.nowShieldTime > 0) {
+            let radius = 100;
+            this.main.angles.forEach((angle) => {
+                const x = this.mouseX + radius * Math.cos(angle);
+                const y = this.mouseY + radius * Math.sin(angle);
+                this.detectShieldCollision(this.hitbox, { x, y, r: 30 });
+            });
         }
-        
-        /*
-        this.ctx.save();
-        this.ctx.translate(this.x, this.y);
-        this.ctx.scale(this.hitbox.s, this.hitbox.s);
-        this.ctx.rotate(this.hitbox.r);
-        this.ctx.strokeRect(this.hitbox.x, this.hitbox.y, this.hitbox.w, this.hitbox.h);
-        this.ctx.stroke();
-        this.ctx.restore();
-        */
+        let hitR = this.main.nowMiniTime > 0 ? 15 : 30;
+        this.detectCollision(this.hitbox, { x: this.mouseX, y: this.mouseY, r: hitR });
     }
-
-    
 }
