@@ -15,8 +15,10 @@ export class Items {
         this.ctx = this.canvas.getContext("2d");
 
         this.isSlow = false;
-        this.imgWidth = 30;
-        this.imgHeight = 30;
+        this.scale = main.mobileScale || 1;
+        this.baseSize = 30 * this.scale;
+        this.imgWidth = this.baseSize;
+        this.imgHeight = this.baseSize;
         this.main = main;
         this.itemType = ITEM_LIST[random].type;
         this.itemColor = ITEM_LIST[random].color;
@@ -36,9 +38,9 @@ export class Items {
         this.isGet = false;
         this.isEnd = false;
         this.hitbox = {
-            x: this.posX + 15,
-            y: this.posY + 15,
-            r: 20
+            x: this.posX + this.baseSize / 2,
+            y: this.posY + this.baseSize / 2,
+            r: 20 * this.scale
         };
     }
 
@@ -189,18 +191,19 @@ export class Items {
 
     drawItem() {
         // 바운스 애니메이션
+        let maxSize = this.baseSize + 10 * this.scale;
         if (this.growing) {
             this.imgWidth += 0.5;
             this.imgHeight += 0.5;
             this.posX -= 0.25;
             this.posY -= 0.25;
-            if (this.imgWidth >= 40) this.growing = false;
+            if (this.imgWidth >= maxSize) this.growing = false;
         } else {
             this.imgWidth -= 0.5;
             this.imgHeight -= 0.5;
             this.posX += 0.25;
             this.posY += 0.25;
-            if (this.imgWidth <= 30) this.growing = true;
+            if (this.imgWidth <= this.baseSize) this.growing = true;
         }
 
         if (!this.isGet) {

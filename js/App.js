@@ -116,6 +116,10 @@ class App {
         window.addEventListener("resize", this.resize.bind(this));
         this.resize();
 
+        // 모바일 스케일 (기준: 1920px 폭)
+        this.mobileScale = Math.min(this.canvas.width / 1920, 1);
+        this.mobileScale = Math.max(this.mobileScale, 0.45);
+
         this.startItemSpawner();
         this.startTimers();
     }
@@ -196,11 +200,12 @@ class App {
         if (this.nowShieldTime <= 0) return;
 
         const speed = 0.01;
-        const radius = 100;
+        const radius = 100 * this.mobileScale;
+        const shieldSize = 30 * this.mobileScale;
         this.angles.forEach((angle, index) => {
             const x = this.mouseX + radius * Math.cos(angle);
             const y = this.mouseY + radius * Math.sin(angle);
-            this.ctx.drawImage(this.shieldImg, 0, 0, 512, 512, x, y, 30, 30);
+            this.ctx.drawImage(this.shieldImg, 0, 0, 512, 512, x, y, shieldSize, shieldSize);
             this.angles[index] += speed * this.delta;
         });
     }
@@ -271,8 +276,8 @@ class App {
 
                 let x = this.getRandomInt(0, this.canvas.width);
                 let y = this.getRandomInt(0, this.canvas.height);
-                let size = this.getRandomArbitrary(this.nowScale, this.maxScale);
-                let speed = this.getRandomInt(this.nowSpeed, this.maxSpeed);
+                let size = this.getRandomArbitrary(this.nowScale, this.maxScale) * this.mobileScale;
+                let speed = this.getRandomInt(this.nowSpeed, this.maxSpeed) * this.mobileScale;
 
                 if (this.nowSlowTime > 0) speed = 5;
 
@@ -365,6 +370,8 @@ class App {
     resize() {
         this.canvas.width = document.body.clientWidth;
         this.canvas.height = document.body.clientHeight;
+        this.mobileScale = Math.min(this.canvas.width / 1920, 1);
+        this.mobileScale = Math.max(this.mobileScale, 0.45);
     }
 
     getRandomInt(min, max) {
@@ -396,7 +403,7 @@ class App {
     }
 
     drawChar() {
-        let imgSize = this.charSize;
+        let imgSize = this.charSize * this.mobileScale;
 
         // 트레일 파티클
         if (this.skin.trail) {

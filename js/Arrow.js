@@ -281,11 +281,11 @@ export class Arrow {
         if (this.shotMotionFlag) return;
 
         if (this.main.nowShieldTime > 0) {
-            let radius = 100;
+            let radius = 100 * (this.main.mobileScale || 1);
             this.main.angles.forEach((angle) => {
                 const x = this.mouseX + radius * Math.cos(angle);
                 const y = this.mouseY + radius * Math.sin(angle);
-                this.detectShieldCollision(this.hitbox, { x, y, r: 30 });
+                this.detectShieldCollision(this.hitbox, { x, y, r: 30 * (this.main.mobileScale || 1) });
             });
         }
         let hitR = this.main.nowMiniTime > 0 ? 15 : 30;

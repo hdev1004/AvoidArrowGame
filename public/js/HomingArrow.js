@@ -7,7 +7,7 @@ export class HomingArrow {
         this.x = x;
         this.y = y;
         this.speed = 3;
-        this.size = 1.2;
+        this.size = 1.2 * (main.mobileScale || 1);
         this.isEnd = false;
         this.isHit = false;
 
@@ -156,12 +156,12 @@ export class HomingArrow {
     checkCollision() {
         // 쉴드 충돌
         if (this.main.nowShieldTime > 0) {
-            let radius = 100;
+            let radius = 100 * (this.main.mobileScale || 1);
             this.main.angles.forEach((angle) => {
                 const sx = this.mouseX + radius * Math.cos(angle);
                 const sy = this.mouseY + radius * Math.sin(angle);
                 let dist = Math.sqrt((this.x - sx) ** 2 + (this.y - sy) ** 2);
-                if (dist < 40 && !this.isHit) {
+                if (dist < 40 * (this.main.mobileScale || 1) && !this.isHit) {
                     this.exploding = true;
                     this.isHit = true;
                     this.main.drawParticle(this.x, this.y);
